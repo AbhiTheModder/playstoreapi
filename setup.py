@@ -52,7 +52,6 @@ setup(
     cmdclass={"build_py": ProtobufBuilder},
     install_requires=[
         "cryptography>=2.2",
-        "protoc-wheel-0",
         "protobuf>=3.5.2",
         "requests",
     ],

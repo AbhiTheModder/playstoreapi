@@ -64,14 +64,6 @@ URL_USER_PROFILE = URL_FDFE + "api/userProfile"
 # top free
 
 
-class SSLContext(ssl.SSLContext):
-    def set_alpn_protocols(self, protocols):
-        """
-        ALPN headers cause Google to return 403 Bad Authentication.
-        """
-        pass
-
-
 class AuthHTTPAdapter(requests.adapters.HTTPAdapter):
     def init_poolmanager(self, *args, **kwargs):
         """
@@ -79,8 +71,7 @@ class AuthHTTPAdapter(requests.adapters.HTTPAdapter):
         ssl.OP_NO_TICKET which causes Google to return 403 Bad
         Authentication.
         """
-        context = SSLContext()
-        context.verify_mode = ssl.CERT_REQUIRED
+        context = ssl.create_default_context()
         context.options &= ~ssl.OP_NO_TICKET
         self.poolmanager = PoolManager(*args, ssl_context=context, **kwargs)
 
