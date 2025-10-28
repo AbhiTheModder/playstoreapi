@@ -10,21 +10,16 @@
 
 # Google Play Store Python API
 
-This project is fork of [googleplay-api](https://github.com/NoMore201/googleplay-api).
+This project is fork of [playstoreapi](https://gitlab.com/marzzzello/playstoreapi).
 It contains an unofficial API for google play interactions.
-
-This fork was created to have a better base for the [gplaycrawler](https://gitlab.com/marzzzello/gplaycrawler).
 
 The code was updated with the following changes:
 
-- add (anonymous) login via token dispenser
-- add login via environment variables
-- updated protobuf and device configuration (they are now the same as the [GPlayApi](https://gitlab.com/AuroraOSS/gplayapi) from AuroraOSS)
-- remove python2 support
-- raise exceptions for bad HTTP status codes
-- add possibility to use a delay between requests
-- add streamDetails (used for related apps)
-- add support for next pages to search and streamDetails
+- add config files for token & gsfid instead of env vars (env vars still supported though)
+- Updated with latest googleplay proto format
+- better download support for split files
+- fixes for latest urllib3 library
+- update fdfe base url
 
 ## Setup
 
