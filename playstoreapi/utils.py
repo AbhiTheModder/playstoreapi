@@ -1,4 +1,5 @@
 import struct
+
 from google.protobuf.json_format import MessageToDict
 
 
@@ -28,49 +29,49 @@ def toBigInt(byteArray):
 
 def hasPrefetch(obj):
     try:
-        return len(obj.preFetch) > 0
+        return obj.HasField("preFetch")
     except ValueError:
         return False
 
 
 def hasListResponse(obj):
     try:
-        return obj.HasField('listResponse')
+        return obj.HasField("listResponse")
     except ValueError:
         return False
 
 
 def hasSearchResponse(obj):
     try:
-        return obj.HasField('searchResponse')
+        return obj.HasField("searchResponse")
     except ValueError:
         return False
 
 
 def hasCluster(obj):
     try:
-        return obj.HasField('cluster')
+        return obj.HasField("cluster")
     except ValueError:
         return False
 
 
 def hasTosContent(tocResponse):
     try:
-        return tocResponse.HasField('tosContent')
+        return tocResponse.HasField("tosContent")
     except ValueError:
         return False
 
 
 def hasTosToken(tocResponse):
     try:
-        return tocResponse.HasField('tosToken')
+        return tocResponse.HasField("tosToken")
     except ValueError:
         return False
 
 
 def hasCookie(tocResponse):
     try:
-        return tocResponse.HasField('cookie')
+        return tocResponse.HasField("cookie")
     except ValueError:
         return False
 
@@ -79,7 +80,7 @@ def hasDoc(obj):
     # doc an be a single object or a
     # RepeatedComposite object
     try:
-        existance = obj.HasField('doc')
+        existance = obj.HasField("doc")
     except ValueError:
         try:
             existance = len(obj.doc) > 0
@@ -93,7 +94,7 @@ def hasItem(obj):
     # doc an be a single object or a
     # RepeatedComposite object
     try:
-        existance = obj.HasField('item')
+        existance = obj.HasField("item")
     except ValueError:
         try:
             existance = len(obj.item) > 0

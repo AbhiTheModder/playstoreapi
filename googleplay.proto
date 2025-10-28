@@ -993,9 +993,71 @@ message AppDetails {
   optional string categoryName = 48;
   optional int64 downloadCount = 53;
   optional string downloadLabelDisplay = 61;
+  optional AppLaunch appLaunch = 64;
+  optional TagGroup tagGroup = 66;
   optional string inAppProduct = 67;
   optional string downloadLabelAbbreviated = 77;
   optional string downloadLabel = 78;
+  optional Compatibility compatibility = 82;
+  optional Support support = 86;
+}
+
+message AppLaunch {
+  optional string date = 1;
+  optional Time time = 2;
+
+  message Time {
+      optional int64 timestamp = 1;
+      optional int64 unknown = 2; // nanoseconds?
+  }
+}
+
+message TagGroup {
+  // Lazy to guess the type names, please adjust if needed.
+  optional TagType type1 = 1;
+  optional TagType type2 = 2;
+  optional TagType type3 = 3;
+  optional TagType type4 = 4;
+  optional TagType type5 = 5;
+  optional TagType type6 = 6;
+}
+
+message TagType {
+  repeated TagEntry entries = 1;
+}
+
+message TagEntry {
+  optional string name = 1;
+  optional TagMetadata metadata = 2;
+  optional string category = 3;
+}
+
+message TagMetadata {
+  oneof metadata {
+    TagData category = 3;
+    TagData search = 4;
+  }
+}
+
+message TagData {
+  optional string url = 1;
+  optional string label = 2;
+}
+
+message Support {
+  optional string developerName = 1;
+  optional string developerEmail = 2;
+  optional string developerAddress = 3;
+  optional string developerPhoneNumber = 4;
+}
+
+message Compatibility {
+  repeated ActiveDevice activeDevices = 1;
+}
+
+message ActiveDevice {
+  optional string requiredOS = 1;
+  optional string name = 2;
 }
 
 message ModifyLibrary {
@@ -1009,6 +1071,7 @@ message Publisher { optional PublisherStream publisherStream = 2; }
 message PublisherStream {
   optional string moreUrl = 3;
   optional string query = 11;
+  optional string browseUrl = 83;
 }
 
 message EditorChoice {
@@ -1031,6 +1094,7 @@ message Dependencies {
   optional int32 targetSdk = 4;
   optional int32 unknown2 = 5;
   repeated string splitApks = 11;
+  repeated LibraryDependency libraryDependency = 13;
 }
 
 message Dependency {
@@ -1038,6 +1102,12 @@ message Dependency {
   optional int32 version = 2;
   optional int32 unknown4 = 4;
 }
+
+message LibraryDependency {
+  optional string packageName = 1;
+  optional int64 versionCode = 2;
+}
+
 
 message TestingProgramInfo {
   optional bool subscribed = 2;
@@ -1123,6 +1193,26 @@ message Item {
   optional bool useWishlistAsPrimaryAction = 33;
   optional string reviewQuestionsUrl = 34;
   optional string reviewSummaryUrl = 39;
+  optional ContentRating contentRating = 50;
+}
+
+message ContentRating {
+  message ContentRatingImage {
+    message Dimension {
+      optional int32 width = 3;
+      optional int32 height = 4;
+    }
+    message Image {
+      optional string url = 1;
+    }
+    optional Dimension dimension = 3;
+    optional Image image = 6;
+  }
+  optional string title = 1;
+  optional string recommendationAndDescriptionHtml = 2;
+  optional ContentRatingImage contentRatingImage = 3;
+  optional string recommendation = 5;
+  optional string description = 6;
 }
 
 message AppInfo {
@@ -1157,7 +1247,7 @@ message Annotations {
   optional string privacyPolicyUrl = 18;
   optional SuggestionReasons suggestion_reasons = 19;
   optional Warning optimalDeviceClassWarning = 20;
-  repeated BadgeContainer badgeContainer = 21;
+  optional BadgeContainer badgeContainer = 21;
   optional SectionMetaData sectionSuggestForRating = 22;
   optional SectionMetaData sectionPurchaseCrossSell = 24;
   repeated OverflowLink overflowLink = 25;
@@ -1342,6 +1432,7 @@ message Stream {
   optional string title = 1;
   optional SubStream stream = 2;
   optional string subtitle = 3;
+  optional string browseUrl = 83;
 }
 
 message SubStream { optional StreamLink link = 2; }
@@ -1354,7 +1445,7 @@ message Link {
 
 message StreamLink {
   optional string url = 1;
-  optional bytes streamUrl = 2;
+  optional string streamUrl = 2;
   optional string searchUrl = 3;
   optional string subCategoryUrl = 5;
   optional string searchQuery = 11;
@@ -1751,7 +1842,7 @@ message ServerCookies { repeated ServerCookie serverCookie = 1; }
 message ResponseWrapper {
   optional Payload payload = 1;
   optional ServerCommands commands = 2;
-  repeated PreFetch preFetch = 3;
+  optional PreFetch preFetch = 3;
   repeated Notification notification = 4;
   optional ServerMetadata serverMetadata = 5;
   optional Targets targets = 6;

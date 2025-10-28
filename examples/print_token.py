@@ -10,7 +10,7 @@
 
 from playstoreapi.googleplay import GooglePlayAPI
 
-api = GooglePlayAPI('en_GB', 'Europe/London')
+api = GooglePlayAPI("en_GB", "Europe/London")
 
 # prints token if not set via env var
 api.envLogin()
