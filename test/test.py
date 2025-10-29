@@ -39,28 +39,27 @@ for doc in result:
             pass
 
 # DOWNLOAD
-docid = "org.mozilla.focus"
-print("\nAttempting to download {}\n".format(docid))
-fl = api.download(docid)
-with open(docid + ".apk", "wb") as apk_file:
-    for chunk in fl.get("file").get("data"):
-        apk_file.write(chunk)
-    print("\nDownload successful\n")
-
-# DOWNLOAD SPLITS
-docid = "com.google.android.apps.tachyon"
-print("\nAttempting to download .apks for {}\n".format(docid))
-fl = api.download(docid)
-with zipfile.ZipFile(docid + ".apks", "w") as apks_zip:
-    main_data = b"".join(fl.get("file").get("data"))
-    apks_zip.writestr("base.apk", main_data)
-    print("\nDownload base apk successful\n")
-
-    for split in fl.get("splits"):
-        split_data = b"".join(split["file"]["data"])
-        split_name = f"split_{split['name']}.apk"
-        apks_zip.writestr(split_name, split_data)
-print("\nDownload splits successful\n")
+test_apps = ["org.mozilla.focus", "com.google.android.apps.tachyon"]
+for docid in test_apps:
+    print("\nAttempting to download {}\n".format(docid))
+    fl = api.download(docid)
+    if 'splits' in fl and fl['splits']:
+        # Download as .apks with splits
+        with zipfile.ZipFile(docid + ".apks", "w") as apks_zip:
+            main_data = b"".join(fl.get("file").get("data"))
+            apks_zip.writestr("base.apk", main_data)
+            print("\nDownload base apk successful\n")
+            for split in fl.get("splits"):
+                split_data = b"".join(split["file"]["data"])
+                split_name = f"split_{split['name']}.apk"
+                apks_zip.writestr(split_name, split_data)
+        print("\nDownload splits successful\n")
+    else:
+        # Download as single .apk
+        with open(docid + ".apk", "wb") as apk_file:
+            for chunk in fl.get("file").get("data"):
+                apk_file.write(chunk)
+        print("\nDownload successful\n")
 
 # BULK DETAILS
 testApps = ["org.mozilla.focus", "com.non.existing.app"]
