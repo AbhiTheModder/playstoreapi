@@ -294,9 +294,7 @@ class GooglePlayAPI(object):
         try:
             if response.payload.HasField("uploadDeviceConfigResponse"):
                 self.deviceConfigToken = response.payload.uploadDeviceConfigResponse
-                self.deviceConfigToken = (
-                    self.deviceConfigToken.uploadDeviceConfigToken
-                )
+                self.deviceConfigToken = self.deviceConfigToken.uploadDeviceConfigToken
         except ValueError:
             pass
 
@@ -315,14 +313,21 @@ class GooglePlayAPI(object):
                         config_data = json.load(f)
                     authSubToken = config_data.get("authSubToken")
                     gsfId_str = config_data.get("gsfId")
-                    deviceCheckinConsistencyToken = config_data.get("deviceCheckinConsistencyToken")
+                    deviceCheckinConsistencyToken = config_data.get(
+                        "deviceCheckinConsistencyToken"
+                    )
                     deviceConfigToken = config_data.get("deviceConfigToken")
                     dfeCookie = config_data.get("dfeCookie")
                     if authSubToken and gsfId_str:
                         if not quiet:
                             print("\nLogin with token from config file\n")
                         self.login(
-                            gsfId=int(gsfId_str), authSubToken=authSubToken, check=check, deviceCheckinConsistencyToken=deviceCheckinConsistencyToken, deviceConfigToken=deviceConfigToken, dfeCookie=dfeCookie
+                            gsfId=int(gsfId_str),
+                            authSubToken=authSubToken,
+                            check=check,
+                            deviceCheckinConsistencyToken=deviceCheckinConsistencyToken,
+                            deviceConfigToken=deviceConfigToken,
+                            dfeCookie=dfeCookie,
                         )
                         return
                 except (IOError, ValueError):
@@ -359,7 +364,16 @@ class GooglePlayAPI(object):
             path = os.path.expanduser(CONFIG_PATHS[0])
         try:
             with open(path, "w") as f:
-                json.dump({"authSubToken": self.authSubToken, "gsfId": self.gsfId, "deviceCheckinConsistencyToken": self.deviceCheckinConsistencyToken, "deviceConfigToken": self.deviceConfigToken, "dfeCookie": self.dfeCookie}, f)
+                json.dump(
+                    {
+                        "authSubToken": self.authSubToken,
+                        "gsfId": self.gsfId,
+                        "deviceCheckinConsistencyToken": self.deviceCheckinConsistencyToken,
+                        "deviceConfigToken": self.deviceConfigToken,
+                        "dfeCookie": self.dfeCookie,
+                    },
+                    f,
+                )
         except Exception:
             pass
 
@@ -402,8 +416,8 @@ class GooglePlayAPI(object):
             r = response.json()
             # email = r['email']
             # ac2dmToken = r['ac2dmToken']
-            deviceCheckinConsistencyToken = r['deviceCheckInConsistencyToken']
-            deviceConfigToken = r['deviceConfigToken']
+            deviceCheckinConsistencyToken = r["deviceCheckInConsistencyToken"]
+            deviceConfigToken = r["deviceConfigToken"]
             # gcmToken = r['gcmToken']
             gsfId = int(r["gsfId"], 16)
             authSubToken = r["authToken"]
@@ -831,14 +845,39 @@ class GooglePlayAPI(object):
             versionCode (int): version to download
             offerType (int): different type of downloads (mostly unused for apks)
             downloadToken (str): download token returned by 'purchase' API
-            progress_bar (bool): wether or not to print a progress bar to stdout
+            expansion_files (bool): whether to include expansion files in the result
 
         Returns:
-            Dictionary containing apk data and a list of expansion files. As stated
-            in android documentation, there can be at most 2 expansion files, one with
-            main content, and one for patching the main content. Their names should
-            follow this format:
-
+            Dictionary containing download information for the app, with the following structure:
+            {
+                "docId": str,  # the package name
+                "file": {
+                    "url": str,  # download URL for the main APK
+                    "cookies": dict  # authentication cookies for download
+                },
+                "splits": list of dicts, each with:
+                    {
+                        "name": str,
+                        "sha1": str,
+                        "sha256": str,
+                        "downloadSize": int,
+                        "compressedSize": int,
+                        "file": {
+                            "url": str,  # download URL for the split APK
+                            "cookies": dict  # authentication cookies for download
+                        }
+                    },
+                "additionalData": list of dicts (only if expansion_files=True), each with:
+                    {
+                        "type": str,  # "main" or "patch"
+                        "versionCode": int,
+                        "file": {
+                            "url": str,  # download URL for the expansion file
+                            "cookies": dict  # authentication cookies for download
+                        }
+                    }
+            }
+            For expansion files, their names should follow the format:
             [main|patch].<expansion-version>.<package-name>.obb
 
             Data to build this name string is provided in the dict object. For more
@@ -877,11 +916,12 @@ class GooglePlayAPI(object):
             result["splits"] = []
             app_delivery_data = response.payload.deliveryResponse.appDeliveryData
             download_url = (
-                app_delivery_data.compressedDownloadUrl or app_delivery_data.downloadUrl
+                app_delivery_data.downloadUrl or app_delivery_data.compressedDownloadUrl
             )
             cookie = app_delivery_data.downloadAuthCookie[0]
             cookies = {str(cookie.name): str(cookie.value)}
-            result["file"] = self._deliver_data(download_url, cookies)
+
+            result["file"] = {"url": download_url, "cookies": cookies}
 
             for split in app_delivery_data.splitDeliveryData:
                 a = {}
@@ -890,8 +930,9 @@ class GooglePlayAPI(object):
                 a["sha256"] = split.sha256
                 a["downloadSize"] = split.downloadSize
                 a["compressedSize"] = split.compressedSize
-                split_download_url = split.compressedDownloadUrl or split.downloadUrl
-                a["file"] = self._deliver_data(split_download_url, cookies)
+                split_download_url = split.downloadUrl or split.compressedDownloadUrl
+
+                a["file"] = {"url": split_download_url, "cookies": cookies}
                 result["splits"].append(a)
 
             if not expansion_files:
@@ -906,16 +947,15 @@ class GooglePlayAPI(object):
                     obbType = "patch"
                 a["type"] = obbType
                 a["versionCode"] = obb.versionCode
-                a["file"] = self._deliver_data(obb.downloadUrl, None)
+                a["file"] = {
+                    "url": obb.downloadUrl or obb.compressedDownloadUrl,
+                    "cookies": cookies,
+                }
                 result["additionalData"].append(a)
             return result
 
     def download(
-        self,
-        packageName,
-        versionCode=None,
-        offerType=1,
-        expansion_files=False
+        self, packageName, versionCode=None, offerType=1, expansion_files=False
     ):
         """
         Download an app and return its raw data (APK file). Free apps need
@@ -942,7 +982,9 @@ class GooglePlayAPI(object):
             appDetails = self.details(packageName).get("details").get("appDetails")
             versionCode = appDetails.get("versionCode")
             if versionCode is None:
-                raise ValueError("No versionCode found for package {}".format(packageName))
+                raise ValueError(
+                    "No versionCode found for package {}".format(packageName)
+                )
 
         headers = self.getHeaders()
         params = {"ot": str(offerType), "doc": packageName, "vc": str(versionCode)}
