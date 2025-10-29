@@ -16,6 +16,10 @@ The code was updated with the following changes:
 
 P.S.: There's still a lot of things I want to fix & update in it, but for now it's good enough and working and I don't have enough time to spend on it very much.
 
+If you're looking for 
+- Java API, check [GPlayApi](https://gitlab.com/AuroraOSS/gplayapi)
+- Rust API, check [gpapi](https://github.com/EFForg/rs-google-play.git)
+
 ## Setup
 
 Install playstoreapi using pip:

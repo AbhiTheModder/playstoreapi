@@ -35,7 +35,7 @@ setup(
     description="Unofficial python api for google play",
     long_description=(CURRENT_DIR / "README.md").read_text(),
     long_description_content_type="text/markdown",
-    url="https://gitlab.com/marzzzello/playstoreapi",
+    url="https://gitlab.com/AbhiTheModder/playstoreapi",
     author="NoMore201, marzzzello, AbhiTheModder",
     author_email="playstoreapi@07f.de",
     license="GPL3",
