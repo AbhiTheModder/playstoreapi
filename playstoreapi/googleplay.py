@@ -298,14 +298,16 @@ class GooglePlayAPI(object):
         except ValueError:
             pass
 
-    def envLogin(self, quiet=False, check=True):
+    def envLogin(self, quiet=False, check=True, config_paths=[]):
         """
         set env vars (optional):
         export PLAYSTORE_TOKEN='ya29.fooooo'
         export PLAYSTORE_GSFID='1234567891234567890'
         export PLAYSTORE_DISPENSER_URL='http://goolag.store:1337/api/auth'
         """
-        for path in CONFIG_PATHS:
+        if not config_paths:
+            config_paths = CONFIG_PATHS
+        for path in config_paths:
             expanded = os.path.expanduser(path)
             if os.path.isfile(expanded):
                 try:
