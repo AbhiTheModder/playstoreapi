@@ -120,14 +120,14 @@ class GooglePlayAPI(object):
         self,
         locale="en_US",
         timezone="UTC",
-        device_codename="px_3a",
+        device_codename="gplayapi_nothing_p1",
         proxies_config=None,
         ssl_verify=True,
         delay=None,
     ):
         self.authSubToken = None
         self.gsfId = None
-        self.device_config_token = None
+        self.deviceConfigToken = None
         self.deviceCheckinConsistencyToken = None
         self.dfeCookie = None
         self.proxies_config = proxies_config
@@ -144,7 +144,7 @@ class GooglePlayAPI(object):
         self.setTimezone(timezone)
         self.delay = delay
         self.lastRequest = 0
-        self.session = requests.session()
+        self.session = requests.Session()
         self.session.mount("https://", AuthHTTPAdapter())
 
     def setLocale(self, locale):
@@ -199,6 +199,15 @@ class GooglePlayAPI(object):
     def setAuthSubToken(self, authSubToken):
         self.authSubToken = authSubToken
 
+    def setDfeCookie(self, dfeCookie):
+        self.dfeCookie = dfeCookie
+
+    def setDeviceConfigToken(self, deviceConfigToken):
+        self.deviceConfigToken = deviceConfigToken
+
+    def setDeviceCheckInConsistencyToken(self, deviceCheckInConsistencyToken):
+        self.deviceCheckinConsistencyToken = deviceCheckInConsistencyToken
+
     def getHeaders(self, upload_fields=False):
         """
         Return the default set of request headers, which
@@ -215,8 +224,8 @@ class GooglePlayAPI(object):
             headers["Authorization"] = (
                 "Bearer %s" % self.authSubToken
             )  # GoogleLogin auth=
-        if self.device_config_token is not None:
-            headers["X-DFE-Device-Config-Token"] = self.device_config_token
+        if self.deviceConfigToken is not None:
+            headers["X-DFE-Device-Config-Token"] = self.deviceConfigToken
         if self.deviceCheckinConsistencyToken is not None:
             headers["X-DFE-Device-Checkin-Consistency-Token"] = (
                 self.deviceCheckinConsistencyToken
@@ -284,9 +293,9 @@ class GooglePlayAPI(object):
         response = googleplay_pb2.ResponseWrapper.FromString(response.content)
         try:
             if response.payload.HasField("uploadDeviceConfigResponse"):
-                self.device_config_token = response.payload.uploadDeviceConfigResponse
-                self.device_config_token = (
-                    self.device_config_token.uploadDeviceConfigToken
+                self.deviceConfigToken = response.payload.uploadDeviceConfigResponse
+                self.deviceConfigToken = (
+                    self.deviceConfigToken.uploadDeviceConfigToken
                 )
         except ValueError:
             pass
@@ -306,11 +315,14 @@ class GooglePlayAPI(object):
                         config_data = json.load(f)
                     authSubToken = config_data.get("authSubToken")
                     gsfId_str = config_data.get("gsfId")
+                    deviceCheckinConsistencyToken = config_data.get("deviceCheckinConsistencyToken")
+                    deviceConfigToken = config_data.get("deviceConfigToken")
+                    dfeCookie = config_data.get("dfeCookie")
                     if authSubToken and gsfId_str:
                         if not quiet:
                             print("\nLogin with token from config file\n")
                         self.login(
-                            gsfId=int(gsfId_str), authSubToken=authSubToken, check=check
+                            gsfId=int(gsfId_str), authSubToken=authSubToken, check=check, deviceCheckinConsistencyToken=deviceCheckinConsistencyToken, deviceConfigToken=deviceConfigToken, dfeCookie=dfeCookie
                         )
                         return
                 except (IOError, ValueError):
@@ -347,7 +359,7 @@ class GooglePlayAPI(object):
             path = os.path.expanduser(CONFIG_PATHS[0])
         try:
             with open(path, "w") as f:
-                json.dump({"authSubToken": self.authSubToken, "gsfId": self.gsfId}, f)
+                json.dump({"authSubToken": self.authSubToken, "gsfId": self.gsfId, "deviceCheckinConsistencyToken": self.deviceCheckinConsistencyToken, "deviceConfigToken": self.deviceConfigToken, "dfeCookie": self.dfeCookie}, f)
         except Exception:
             pass
 
@@ -360,6 +372,9 @@ class GooglePlayAPI(object):
         anonymous=False,
         tokenDispenser=URL_DISPENSER,
         check=True,
+        deviceCheckinConsistencyToken=None,
+        deviceConfigToken=None,
+        dfeCookie=None,
     ):
         """
         Login to your Google Account.
@@ -387,11 +402,12 @@ class GooglePlayAPI(object):
             r = response.json()
             # email = r['email']
             # ac2dmToken = r['ac2dmToken']
-            # deviceCheckInConsistencyToken = r['deviceCheckInConsistencyToken']
-            # deviceConfigToken = r['deviceConfigToken']
+            deviceCheckinConsistencyToken = r['deviceCheckInConsistencyToken']
+            deviceConfigToken = r['deviceConfigToken']
             # gcmToken = r['gcmToken']
             gsfId = int(r["gsfId"], 16)
             authSubToken = r["authToken"]
+            dfeCookie = r["dfeCookie"]
             # print(f'authSubToken: {authSubToken} gsfId: {gsfId}')
 
         if email is not None and password is not None:
@@ -445,6 +461,12 @@ class GooglePlayAPI(object):
             # check if token is valid with a simple search
             if check:
                 self.search("drv")
+        if deviceCheckinConsistencyToken is not None:
+            self.setDeviceCheckInConsistencyToken(deviceCheckinConsistencyToken)
+        if deviceConfigToken is not None:
+            self.setDeviceConfigToken(deviceConfigToken)
+        if dfeCookie is not None:
+            self.setDfeCookie(dfeCookie)
         else:
             raise LoginError("Either (email,pass) or (gsfId, authSubToken) is needed")
 
@@ -780,7 +802,7 @@ class GooglePlayAPI(object):
             cookies=cookies,
             verify=self.ssl_verify,
             stream=True,
-            timeout=60,
+            # timeout=60,
             proxies=self.proxies_config,
         )
 
@@ -889,7 +911,11 @@ class GooglePlayAPI(object):
             return result
 
     def download(
-        self, packageName, versionCode=None, offerType=1, expansion_files=False
+        self,
+        packageName,
+        versionCode=None,
+        offerType=1,
+        expansion_files=False
     ):
         """
         Download an app and return its raw data (APK file). Free apps need
@@ -915,6 +941,8 @@ class GooglePlayAPI(object):
             # pick up latest version
             appDetails = self.details(packageName).get("details").get("appDetails")
             versionCode = appDetails.get("versionCode")
+            if versionCode is None:
+                raise ValueError("No versionCode found for package {}".format(packageName))
 
         headers = self.getHeaders()
         params = {"ot": str(offerType), "doc": packageName, "vc": str(versionCode)}

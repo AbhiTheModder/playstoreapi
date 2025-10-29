@@ -2,7 +2,7 @@
 
 REPO_SRC="https://gitlab.com/AuroraOSS/gplayapi"
 REPO_LOCAL="/tmp/psapi"
-RES_DIR="${REPO_LOCAL}/src/main/resources"
+RES_DIR="${REPO_LOCAL}/lib/src/main/res/raw"
 
 DEVS_FILE="./playstoreapi/device.properties"
 
@@ -17,19 +17,21 @@ if [ ! -d "./playstoreapi" ]; then
 fi
 
 echo "==> Cloning play-store-api repo into $REPO_LOCAL"
-git clone $REPO_SRC $REPO_LOCAL &>/dev/null
-
-# clean device.properties file
-echo "" >$DEVS_FILE
+git clone $REPO_SRC $REPO_LOCAL --depth=1 &>/dev/null
 
 for dev in "$RES_DIR"/*; do
-    NAME=$(basename "$dev" | sed -e "s/\(.*\).properties/\1/")
-    echo "==> appending device data for $NAME"
-    {
-        echo "[$NAME]"
-        cat "$dev"
-        echo ""
-    } >>$DEVS_FILE
+    if [[ $dev == *.properties ]]; then
+        NAME=$(basename "$dev" | sed -e "s/\(.*\).properties/\1/")
+        if grep -q "\[${NAME}\]" "$DEVS_FILE"; then
+            echo "==> skipping device $NAME, already exists"
+        else
+            echo "==> appending device data for $NAME"
+            {
+                echo -e "\n[$NAME]"
+                cat "$dev"
+            } >>$DEVS_FILE
+        fi
+    fi
 done
 
 # cleanup
