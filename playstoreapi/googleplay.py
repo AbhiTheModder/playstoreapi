@@ -356,11 +356,14 @@ class GooglePlayAPI(object):
                 )
             self.login(gsfId=int(gsfId), authSubToken=authSubToken, check=check)
 
-    def saveConfig(self, currr_dir=False):
+    def saveConfig(self, currr_dir=False, config_path=None):
         """
-        Save authSubToken and gsfId to config file
+        Save authSubToken and gsfId to config file.
+        If config_path is provided, save config to that file instead.
         """
-        if currr_dir:
+        if config_path:
+            path = config_path
+        elif currr_dir:
             path = CONFIG_PATHS[1]
         else:
             path = os.path.expanduser(CONFIG_PATHS[0])
