@@ -348,7 +348,7 @@ class GooglePlayAPI(object):
                 print(f"PLAYSTORE_TOKEN='{self.authSubToken}'")
                 print(f"PLAYSTORE_GSFID='{self.gsfId}'")
                 print(f"PLAYSTORE_DISPENSER_URL='{self.gsfId}'")
-            self.saveConfig()
+            # self.saveConfig()
         else:
             if not quiet:
                 print(
