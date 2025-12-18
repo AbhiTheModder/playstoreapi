@@ -25,13 +25,7 @@ If you're looking for
 Install playstoreapi using pip:
 
 ```sh
-$ pip install playstoreapi
-```
-
-Or clone the repo and run:
-
-```sh
-$ python setup.py build
+$ pip install -U git+https://github.com/ABhiTheModder/playstoreapi
 ```
 
 # Usage
