@@ -16,7 +16,7 @@ The code was updated with the following changes:
 
 P.S.: There's still a lot of things I want to fix & update in it, but for now it's good enough and working and I don't have enough time to spend on it very much.
 
-If you're looking for 
+If you're looking for
 - Java API, check [GPlayApi](https://gitlab.com/AuroraOSS/gplayapi)
 - Rust API, check [gpapi](https://github.com/EFForg/rs-google-play.git)
 
@@ -74,3 +74,11 @@ export HTTP_PROXY='http://localhost:8080'
 export HTTPS_PROXY='http://localhost:8080'
 export CURL_CA_BUNDLE='/usr/local/myproxy_info/cacert.pem'
 ```
+
+## Token Dispenser
+
+Anonymous login requires a **token dispenser** URL. No default dispenser is provided — you must configure your own.
+
+Options:
+1. **Self-host a dispenser** — The dispenser is open source: [aurora-dispenser](https://gitlab.com/AuroraOSS/aurora-dispenser)
+2. **Set the URL** via the `PLAYSTORE_DISPENSER_URL` environment variable, or pass it as the `tokenDispenser` parameter to `login()`

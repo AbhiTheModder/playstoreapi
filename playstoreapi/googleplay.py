@@ -14,6 +14,8 @@ from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 from cryptography.hazmat.primitives.serialization import load_der_public_key
 from urllib3.poolmanager import PoolManager
 
+from urllib.parse import urlparse
+
 from . import config, googleplay_pb2, utils
 
 CONFIG_PATHS = ["~/.config/playstoreapi", "./.playstoreapi"]
@@ -21,7 +23,7 @@ CONFIG_PATHS = ["~/.config/playstoreapi", "./.playstoreapi"]
 CONTENT_TYPE_PROTO = "application/x-protobuf"
 CONTENT_TYPE_URLENC = "application/x-www-form-urlencoded; charset=UTF-8"
 
-URL_DISPENSER = "https://auroraoss.com/api/auth"
+URL_DISPENSER = None
 
 URL_BASE = "https://android.clients.google.com/"
 URL_FDFE = URL_BASE + "fdfe/"
@@ -134,7 +136,7 @@ class GooglePlayAPI(object):
         self.headers = {
             "User-Agent": "com.aurora.store-4.7.4-70",
             "Content-Type": "application/json",
-            "Host": "auroraoss.com",
+
             "Connection": "keep-alive",
             "Accept-Encoding": "gzip",
         }
@@ -339,15 +341,20 @@ class GooglePlayAPI(object):
         tokenDispenser = os.environ.get("PLAYSTORE_DISPENSER_URL")
 
         if tokenDispenser is None:
-            tokenDispenser = URL_DISPENSER
+            raise LoginError(
+                "No token dispenser URL configured. "
+                "Set the PLAYSTORE_DISPENSER_URL environment variable or "
+                "pass tokenDispenser to login(). "
+                "See https://gitlab.com/AuroraOSS/aurora-dispenser to self-host one."
+            )
 
         if gsfId is None or authSubToken is None:
-            self.login(anonymous=True, tokenDispenser=URL_DISPENSER)
+            self.login(anonymous=True, tokenDispenser=tokenDispenser)
             if not quiet:
                 print("\nAnonymous login\n")
                 print(f"PLAYSTORE_TOKEN='{self.authSubToken}'")
                 print(f"PLAYSTORE_GSFID='{self.gsfId}'")
-                print(f"PLAYSTORE_DISPENSER_URL='{self.gsfId}'")
+                print(f"PLAYSTORE_DISPENSER_URL='{tokenDispenser}'")
             # self.saveConfig()
         else:
             if not quiet:
@@ -389,7 +396,7 @@ class GooglePlayAPI(object):
         gsfId=None,
         authSubToken=None,
         anonymous=False,
-        tokenDispenser=URL_DISPENSER,
+        tokenDispenser=None,
         check=True,
         deviceCheckinConsistencyToken=None,
         deviceConfigToken=None,
@@ -407,14 +414,25 @@ class GooglePlayAPI(object):
             * authSubToken
         """
         if anonymous is True:
+            if tokenDispenser is None:
+                raise LoginError(
+                    "No token dispenser URL provided. "
+                    "Set the PLAYSTORE_DISPENSER_URL environment variable or "
+                    "pass tokenDispenser to login(). "
+                    "See https://gitlab.com/AuroraOSS/aurora-dispenser to self-host one."
+                )
+
             device_data = self.deviceBuilder.device_case_preserved
 
+            dispenser_headers = dict(self.headers)
+            dispenser_headers["Host"] = urlparse(tokenDispenser).netloc
+
             response = self.session.post(
-                URL_DISPENSER,
+                tokenDispenser,
                 json=device_data,
                 verify=self.ssl_verify,
                 proxies=self.proxies_config,
-                headers=self.headers,
+                headers=dispenser_headers,
             )
             if response.status_code != 200:
                 raise LoginError(f"Token dispenser is not OK ({response.status_code})")
